@@ -30,6 +30,8 @@ object App extends SparkUtils {
         "splits" -> "4",
         "rows" -> "10000000",
         "data_transport" -> "DIRECT",
+        "commit_threads_per_instance" -> "2",
+        "sstable_data_size_in_mib" -> "20"
       ),
       // read
       Map(
