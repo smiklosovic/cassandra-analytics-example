@@ -3,14 +3,14 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>net.miklosovic.scala</groupId>
-    <artifactId>spark-example</artifactId>
+    <groupId>org.apache.cassandra.spark.analytics</groupId>
+    <artifactId>analytics-example</artifactId>
     <version>1.0</version>
 
     <name>${project.artifactId}</name>
-    <description>Example Spark template project for quick bootstrap</description>
+    <description>Example Spark Analytics template project for quick bootstrap</description>
 
-    <inceptionYear>2019</inceptionYear>
+    <inceptionYear>2025</inceptionYear>
 
     <properties>
 

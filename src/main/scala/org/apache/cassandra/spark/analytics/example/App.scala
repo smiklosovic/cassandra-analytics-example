@@ -15,7 +15,7 @@ object App extends SparkUtils {
 
     val sparkConf = initialize()
 
-    implicit val spark: SparkSession = SparkSession.builder.appName("Combinator App").config(sparkConf).getOrCreate()
+    implicit val spark: SparkSession = SparkSession.builder.appName("Analytics Demo App").config(sparkConf).getOrCreate()
     implicit val sc: SparkContext = spark.sparkContext
     implicit val sql: SQLContext = spark.sqlContext
 
@@ -91,11 +91,6 @@ object App extends SparkUtils {
     val recordsPerPartition: Long = records / slices
     val remainder: Long = records - (recordsPerPartition * slices)
     val seq = 0 until slices
-
-    logger.info("Records: {}", records)
-    logger.info("Slices: {}", slices)
-    logger.info("Records per partition: {}", recordsPerPartition)
-    logger.info("Remainder: {}", remainder)
 
     sc.parallelize(seq, slices)
       .mapPartitionsWithIndex((index, _) => {
