@@ -11,15 +11,9 @@ import java.util.UUID
 
 object App extends SparkUtils {
 
-  def main(args: Array[String]): Unit = {
+  def resolveConfig(dataTransport: DataTransport): JobConfiguration = {
 
-    val sparkConf = initialize()
-
-    implicit val spark: SparkSession = SparkSession.builder.appName("Analytics Demo App").config(sparkConf).getOrCreate()
-    implicit val sc: SparkContext = spark.sparkContext
-    implicit val sql: SQLContext = spark.sqlContext
-
-    val allConfig: JobConfiguration = JobConfiguration(
+    val directConfig: JobConfiguration = JobConfiguration(
       // write
       Map(
         "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
@@ -29,7 +23,7 @@ object App extends SparkUtils {
         "bulk_writer_cl" -> "LOCAL_QUORUM",
         "splits" -> "4",
         "rows" -> "10000000",
-        "data_transport" -> "DIRECT",
+        "data_transport" -> DIRECT.toString,
         "commit_threads_per_instance" -> "2",
         "sstable_data_size_in_mib" -> "20"
       ),
@@ -44,7 +38,43 @@ object App extends SparkUtils {
         "sizing" -> "default"
       ))
 
-    implicit val config: JobConfiguration = allConfig
+    val s3CompatConfig: JobConfiguration = JobConfiguration(
+      // write
+      Map(
+        "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
+        "keyspace" -> "spark_test",
+        "table" -> "test",
+        "local_dc" -> "dc1",
+        "bulk_writer_cl" -> "LOCAL_QUORUM",
+        "number_splits" -> "4",
+        "rows" -> "10000000",
+        "data_transport" -> S3_COMPAT.toString,
+        "commit_threads_per_instance" -> "2",
+        "sstable_data_size_in_mib" -> "20",
+        "data_transport_extension_class" -> classOf[LocalStorageTransportExtension].getCanonicalName,
+        "storage_client_endpoint_override" -> "http://s3-mock:9090",
+        "storage_client_max_chunk_size_in_bytes" -> "5242880",
+        "max_size_per_sstable_bundle_in_bytes_s3_transport" -> "10485760",
+        "max_job_duration_minutes" -> "10",
+        "job_id" -> UUID.randomUUID().toString
+      ),
+      // read
+      directConfig.readOptions)
+
+    dataTransport match {
+      case DIRECT => directConfig
+      case S3_COMPAT => s3CompatConfig
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+
+    val sparkConf = initialize()
+
+    implicit val spark: SparkSession = SparkSession.builder.appName("Analytics Demo App").config(sparkConf).getOrCreate()
+    implicit val sc: SparkContext = spark.sparkContext
+    implicit val sql: SQLContext = spark.sqlContext
+    implicit val config: JobConfiguration = resolveConfig(S3_COMPAT)
 
     logger.info("Spark Conf: " + sparkConf.toDebugString)
 

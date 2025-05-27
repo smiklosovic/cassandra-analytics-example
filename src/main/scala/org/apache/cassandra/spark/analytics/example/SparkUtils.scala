@@ -4,13 +4,13 @@ import org.apache.cassandra.spark.KryoRegister
 import org.apache.cassandra.spark.bulkwriter.BulkSparkConf
 import org.apache.spark.sql._
 import org.apache.spark.{SparkConf, SparkContext}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import java.nio.ByteBuffer
 import scala.util.Try
 
 trait SparkUtils {
-  val logger = LoggerFactory.getLogger(classOf[SparkUtils])
+  val logger: Logger = LoggerFactory.getLogger(classOf[SparkUtils])
 
   def initialize(): SparkConf = {
     val sparkConf = new SparkConf()
@@ -67,6 +67,14 @@ class JobConfiguration(val writeOptions: Map[String, String], val readOptions: M
   def onlyRead(): JobConfiguration = new JobConfiguration(Map(), readOptions)
 
   def onlyWrite(): JobConfiguration = new JobConfiguration(writeOptions, Map())
+}
+
+sealed trait DataTransport
+case object DIRECT extends DataTransport {
+  override def toString: String = "DIRECT"
+}
+case object S3_COMPAT extends DataTransport {
+  override def toString: String = "S3_COMPAT"
 }
 
 object JobConfiguration {
