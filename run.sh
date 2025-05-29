@@ -5,12 +5,11 @@ cp src/main/resources/spark.properties submit/spark.properties && cp target/buil
 
 docker exec -i spark_master_1 sh -c 'cd /submit/analytics-app; ${SPARK_HOME}/bin/spark-submit \
     --driver-memory 1G \
-    --num-executors 2 \
-    --executor-cores 4 \
+    --executor-cores 2 \
     --executor-memory 4G \
-    --total-executor-cores 8 \
+    --total-executor-cores 6 \
     --class org.apache.cassandra.spark.analytics.example.App \
-    --master spark://spark-master-1:7077 \
+    --master spark://172.19.0.5:7077 \
     --deploy-mode client \
     --properties-file /submit/spark.properties \
     --verbose \

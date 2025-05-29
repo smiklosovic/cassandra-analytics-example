@@ -2,14 +2,19 @@ package org.apache.cassandra.spark.analytics.example
 
 import org.apache.cassandra.spark.KryoRegister
 import org.apache.cassandra.spark.bulkwriter.BulkSparkConf
+import org.apache.spark.api.java.JavaSparkContext
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
+import org.apache.spark.sql.types.DataTypes.{BinaryType, LongType}
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.{SparkConf, SparkContext}
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.nio.ByteBuffer
+import java.util.UUID
 import scala.util.Try
 
-trait SparkUtils {
+trait SparkUtils extends Serializable {
   val logger: Logger = LoggerFactory.getLogger(classOf[SparkUtils])
 
   def initialize(): SparkConf = {
@@ -33,7 +38,11 @@ trait SparkUtils {
                                   sql: SQLContext): T = {
     val result = Try(f.apply(conf, sc, sql))
     spark.close()
-    result.getOrElse(onFailure)
+    if (result.isFailure) {
+      throw result.failed.get
+    } else {
+      result.getOrElse(onFailure)
+    }
   }
 
   protected def convertStringToBytes(string: String): Array[Byte] = {
@@ -52,6 +61,58 @@ trait SparkUtils {
   protected def getReader(sql: SQLContext, jobConfig: JobConfiguration): DataFrameReader = {
     val reader = sql.read.format("org.apache.cassandra.spark.sparksql.CassandraDataSource")
     reader.options(jobConfig.readOptions)
+  }
+
+  def writeExisting(readRows: Option[Dataset[Row]])(implicit jobConfig: JobConfiguration, sql: SQLContext, sc: SparkContext): Option[Dataset[Row]] = {
+    if (!jobConfig.shouldWrite || readRows.isEmpty) {
+      Option.empty
+    } else {
+      getWriter(readRows.get, jobConfig).save()
+      readRows
+    }
+  }
+
+  def write()(implicit jobConfig: JobConfiguration, sql: SQLContext, sc: SparkContext): Option[Dataset[Row]] = {
+    if (!jobConfig.shouldWrite)
+      Option.empty
+    else {
+      val schema: StructType = new StructType()
+        .add("id", LongType, nullable = false)
+        .add("course", BinaryType, nullable = false)
+        .add("marks", LongType, nullable = false)
+
+      val slices: Int = jobConfig.splits(sc.defaultParallelism)
+      val rows: RDD[Row] = genDataset(sc, jobConfig.rowCount, slices)
+      val df: Dataset[Row] = sql.createDataFrame(rows, schema)
+
+      getWriter(df, jobConfig).save()
+      Option(df)
+    }
+  }
+
+  def read()(implicit jobConfig: JobConfiguration, sql: SQLContext): Option[Dataset[Row]] = {
+    if (!jobConfig.shouldRead) {
+      Option.empty
+    } else {
+      Option(getReader(sql, jobConfig).load())
+    }
+  }
+
+  def genDataset(sc: JavaSparkContext, records: Long, slices: Int): RDD[Row] = {
+    val recordsPerPartition: Long = records / slices
+    val remainder: Long = records - (recordsPerPartition * slices)
+    val seq = 0 until slices
+
+    sc.parallelize(seq, slices)
+      .mapPartitionsWithIndex((index, _) => {
+        val firstRecordNumber: Long = index * recordsPerPartition
+        val recordsToGenerate: Int = if (index == slices - 1) (recordsPerPartition + remainder).toInt else recordsPerPartition.toInt
+        (0 until recordsToGenerate).iterator.map(offset => {
+          val i = firstRecordNumber + offset
+          val courseName: Array[Byte] = convertStringToBytes(UUID.randomUUID().toString)
+          RowFactory.create(Long.box(i), courseName, Long.box(i))
+        })
+      })
   }
 }
 
