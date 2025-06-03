@@ -12,23 +12,24 @@ object App extends SparkUtils {
     val directConfig: JobConfiguration = JobConfiguration(
       // write
       Map(
-        "sidecar_contact_points" -> "172.19.0.5,172.19.0.8,172.19.0.9",
+        "sidecar_contact_points" -> "spark-master-2,cassandra-node-3,cassandra-node-4",
         "keyspace" -> "spark_test",
-        "table" -> "test2",
-        "local_dc" -> "dc1",
-        "bulk_writer_cl" -> "LOCAL_QUORUM",
-        "splits" -> "6",
+        "table" -> "test",
+        "local_dc" -> "dc2",
+        "bulk_writer_cl" -> "ALL",
+        //"splits" -> "6",
         "rows" -> "10000000",
         "data_transport" -> DIRECT.toString,
-        "commit_threads_per_instance" -> "2",
-        "sstable_data_size_in_mib" -> "20"
+        //"commit_threads_per_instance" -> "2",
+        //"sstable_data_size_in_mib" -> "20"
       ),
       // read
       Map(
-        "sidecar_contact_points" -> "172.19.0.5,172.19.0.8,172.19.0.9",
+        "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
         "keyspace" -> "spark_test",
         "table" -> "test",
-        "local_dc" -> "dc1",
+        "dc" -> "dc1",
+        "consistencyLevel" -> "ONE",
         "snapshotName" -> s"${UUID.randomUUID().toString}",
         "createSnapshot" -> "true",
         "sizing" -> "default"
@@ -72,6 +73,6 @@ object App extends SparkUtils {
 
     logger.info("Spark Conf: " + spark.sparkContext.getConf.toDebugString)
 
-    logger.info(execute[Long]((_, _, _) => write().get.count(), { -1 }).toString)
+    logger.info(execute[Long]((_, _, _) => writeExisting(read()).get.count(), { -1 }).toString)
   }
 }
