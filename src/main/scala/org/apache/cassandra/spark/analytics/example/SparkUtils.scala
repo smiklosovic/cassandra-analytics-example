@@ -37,8 +37,8 @@ trait SparkUtils extends Serializable {
                                   sc: SparkContext,
                                   sql: SQLContext): T = {
     val result = Try(f.apply(conf, sc, sql))
-    spark.close()
     if (result.isFailure) {
+      logger.info(s"${result.failed.get}")
       throw result.failed.get
     } else {
       result.getOrElse(onFailure)
