@@ -168,7 +168,7 @@ object App extends SparkUtils {
             |""".stripMargin,
         "keyspace" -> "spark_test",
         "table" -> "test",
-        "bulk_writer_cl" -> "ALL",
+        "bulk_writer_cl" -> "LOCAL_QUORUM",
         "rows" -> "1000000",
         "data_transport" -> S3_COMPAT.toString,
         "data_transport_extension_class" -> classOf[LocalCoordinatedStorageTransportExtension].getCanonicalName,
