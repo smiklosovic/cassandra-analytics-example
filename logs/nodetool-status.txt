@@ -1,0 +1,21 @@
+11:57 $ docker-shell-master-nodetool status
+Datacenter: dc1
+===============
+Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+--  Address     Load        Tokens  Owns (effective)  Host ID                               Rack 
+UN  172.19.0.9  632.29 MiB  16      100.0%            d099d1f1-657a-40e3-9d0f-18f5e6f50bb9  rack3
+UN  172.19.0.5  167.38 KiB  16      100.0%            698aa6a4-f26f-490a-8a67-be6cb59aa397  rack1
+UN  172.19.0.8  637.18 MiB  16      100.0%            4be7ff56-bbb0-4142-80f9-5c1dbc8ef266  rack2
+
+✔ ~/dev/per/docker-containers/cassandra-spark/compose/submit/logs [master|✚ 1⚑ 14] 
+11:57 $ docker-shell-master-2-nodetool status
+Datacenter: dc2
+===============
+Status=Up/Down
+|/ State=Normal/Leaving/Joining/Moving
+--  Address      Load        Tokens  Owns (effective)  Host ID                               Rack 
+UN  172.19.0.10  167.44 KiB  16      100.0%            1c5e01f6-f624-4f0b-abcd-ca34478981b6  rack1
+UN  172.19.0.12  631.92 MiB  16      100.0%            d8d1c877-a1dd-44a5-9b19-877f9a6aa985  rack3
+UN  172.19.0.11  630.59 MiB  16      100.0%            7b11b3e8-2d9a-4b1a-a75b-cb5c452917fb  rack2
+
