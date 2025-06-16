@@ -1,5 +1,7 @@
 package org.apache.cassandra.spark.analytics.example
 
+import com.instaclustr.cassandra.Transformer.runTransformation
+import com.instaclustr.cassandra.{CassandraPartitionsResolver, TransformerOptions}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 
@@ -17,12 +19,52 @@ object App extends SparkUtils {
     //executeJob(oneClusterWriteReadSameTable)
     //executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
-    executeJob(twoClustersCoordinatedWrite())
+    //executeJob(twoClustersCoordinatedWrite())
+    executeJob(sstableToParquet)
   }
 
   def executeJob[T](r: => T)(implicit spark: SparkSession): Unit = {
     Try.apply(r)
     spark.close()
+  }
+
+  /**
+   * 1. write data to spark_test.test table
+   * 2. transform all written data to Parquet files
+   */
+  private def sstableToParquet()(implicit spark: SparkSession, sc: SparkContext, sql: SQLContext): Unit = {
+    writeOneCluster(JobConfiguration(
+      // write
+      Map(
+        "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
+        "keyspace" -> "spark_test",
+        "table" -> "test",
+        "local_dc" -> "dc1",
+        "bulk_writer_cl" -> "LOCAL_QUORUM",
+        "rows" -> "10000000",
+        "data_transport" -> DIRECT.toString,
+      ),
+      // read
+      Map.empty))
+
+    implicit val transformationJobConfig: JobConfiguration = JobConfiguration(
+      Map.empty,
+      Map.empty
+    )
+
+    logger.info(execute[Long]((_, _, _) => {
+      val partitions = CassandraPartitionsResolver.partitions("dc1", "spark_test", "spark-master-1", 9043).toSeq
+
+      val builder = new TransformerOptions.Builder()
+        .keyspace("spark_test")
+        .table("test")
+        .output("/submit/output")
+        .sidecar("spark-master-1:9043")
+        .sidecar("cassandra-node-1:9043")
+        .sidecar("cassandra-node-2:9043")
+
+      sc.parallelize(partitions, 6).map(p => runTransformation(builder.partition(p).build())).count()
+    }, { -1 }).toString)
   }
 
   /**
