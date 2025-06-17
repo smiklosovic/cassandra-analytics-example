@@ -60,15 +60,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.cassandra.spark</groupId>
+            <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-analytics-core_spark3_${scala.compat.version}</artifactId>
-            <version>1.0.0</version>
+            <version>0.1.0</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.cassandra.spark</groupId>
+            <groupId>org.apache.cassandra</groupId>
             <artifactId>cassandra-analytics-common_spark3_${scala.compat.version}</artifactId>
-            <version>1.0.0</version>
+            <version>0.1.0</version>
         </dependency>
 
         <dependency>
