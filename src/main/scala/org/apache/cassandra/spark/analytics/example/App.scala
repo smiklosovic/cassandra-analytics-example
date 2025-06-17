@@ -1,10 +1,9 @@
 package org.apache.cassandra.spark.analytics.example
 
-import com.instaclustr.cassandra.Transformer.runTransformation
-import com.instaclustr.cassandra.{CassandraPartitionsResolver, TransformerOptions}
+import com.instaclustr.cassandra.{CassandraPartitionsResolver, SSTableToParquetTransformer, TransformerOptions}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
-
+import scala.collection.JavaConverters._
 import java.util.UUID
 import scala.util.Try
 
@@ -40,7 +39,7 @@ object App extends SparkUtils {
         "keyspace" -> "spark_test",
         "table" -> "test",
         "local_dc" -> "dc1",
-        "bulk_writer_cl" -> "LOCAL_QUORUM",
+        "bulk_writer_cl" -> "ALL",
         "rows" -> "10000000",
         "data_transport" -> DIRECT.toString,
       ),
@@ -58,12 +57,19 @@ object App extends SparkUtils {
       val builder = new TransformerOptions.Builder()
         .keyspace("spark_test")
         .table("test")
+        .maxRowsPerFile(100000)
         .output("/submit/output")
         .sidecar("spark-master-1:9043")
         .sidecar("cassandra-node-1:9043")
         .sidecar("cassandra-node-2:9043")
 
-      sc.parallelize(partitions, 6).map(p => runTransformation(builder.partition(p).build())).count()
+      val files = sc.parallelize(partitions, 6).map(p => {
+        new SSTableToParquetTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
+      }).collect().flatten
+
+      files.foreach(println(_))
+
+      files.length
     }, { -1 }).toString)
   }
 
