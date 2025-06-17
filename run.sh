@@ -1,6 +1,11 @@
 #!/bin/bash
 
 mvn clean install
+
+if [ "$?" != "0" ]; then
+  exit 1
+fi
+
 cp src/main/resources/spark.properties submit/spark.properties && cp target/build.jar submit/analytics-app
 
 docker exec -i spark_master_1 sh -c 'cd /submit/analytics-app; ${SPARK_HOME}/bin/spark-submit \
