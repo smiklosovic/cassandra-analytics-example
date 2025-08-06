@@ -1,8 +1,9 @@
 package org.apache.cassandra.spark.analytics.example
 
-import com.instaclustr.cassandra.{CassandraPartitionsResolver, SSTableToParquetTransformer, TransformerOptions}
+import com.instaclustr.cassandra.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
+
 import scala.collection.JavaConverters._
 import java.util.UUID
 import scala.util.Try
@@ -15,11 +16,11 @@ object App extends SparkUtils {
     implicit val sql: SQLContext = spark.sqlContext
     logger.info("Spark Conf: " + sc.getConf.toDebugString)
 
-    //executeJob(oneClusterWriteReadSameTable)
+    executeJob(oneClusterWriteReadSameTable)
     //executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
     //executeJob(twoClustersCoordinatedWrite())
-    executeJob(sstableToParquet)
+    //executeJob(sstableToParquet)
   }
 
   def executeJob[T](r: => T)(implicit spark: SparkSession): Unit = {
@@ -52,7 +53,14 @@ object App extends SparkUtils {
     )
 
     logger.info(execute[Long]((_, _, _) => {
-      val partitions = CassandraPartitionsResolver.partitions("dc1", "spark_test", "spark-master-1", 9043).toSeq
+
+      val options = new PartitionResolverOptions
+      options.sidecar = "spark-master-1"
+      options.dc = "dc1"
+      options.keyspace = "spark_test"
+      options.rf = 9043
+
+      val partitions = new CassandraPartitionsResolver(options).getPartitions.toSeq
 
       val builder = new TransformerOptions.Builder()
         .keyspace("spark_test")
@@ -64,7 +72,7 @@ object App extends SparkUtils {
         .sidecar("cassandra-node-2:9043")
 
       val files = sc.parallelize(partitions, 6).map(p => {
-        new SSTableToParquetTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
+        new SSTableTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
       }).collect().flatten
 
       files.foreach(println(_))

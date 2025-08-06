@@ -67,14 +67,14 @@
 
         <dependency>
             <groupId>org.apache.cassandra</groupId>
-            <artifactId>cassandra-analytics-common_spark3_${scala.compat.version}</artifactId>
+            <artifactId>cassandra-analytics-common</artifactId>
             <version>0.1.0</version>
         </dependency>
 
         <dependency>
             <groupId>com.instaclustr</groupId>
-            <artifactId>sstable-parquet-transformer</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <artifactId>sstable-transformer</artifactId>
+            <version>1.0.0</version>
             <classifier>spark</classifier>
         </dependency>
 
