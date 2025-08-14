@@ -16,11 +16,11 @@ object App extends SparkUtils {
     implicit val sql: SQLContext = spark.sqlContext
     logger.info("Spark Conf: " + sc.getConf.toDebugString)
 
-    executeJob(oneClusterWriteReadSameTable)
+    //executeJob(oneClusterWriteReadSameTable)
     //executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
     //executeJob(twoClustersCoordinatedWrite())
-    //executeJob(sstableToParquet)
+    executeJob(sstableToParquet)
   }
 
   def executeJob[T](r: => T)(implicit spark: SparkSession): Unit = {
@@ -55,10 +55,10 @@ object App extends SparkUtils {
     logger.info(execute[Long]((_, _, _) => {
 
       val options = new PartitionResolverOptions
-      options.sidecar = "spark-master-1"
+      options.sidecar = "spark-master-1:9043"
       options.dc = "dc1"
       options.keyspace = "spark_test"
-      options.rf = 9043
+      options.rf = 3
 
       val partitions = new CassandraPartitionsResolver(options).getPartitions.toSeq
 

@@ -38,6 +38,7 @@ trait SparkUtils extends Serializable {
                                   sql: SQLContext): T = {
     val result = Try(f.apply(conf, sc, sql))
     if (result.isFailure) {
+      result.failed.get.printStackTrace()
       logger.info(s"${result.failed.get}")
       throw result.failed.get
     } else {
