@@ -16,11 +16,11 @@ object App extends SparkUtils {
     implicit val sql: SQLContext = spark.sqlContext
     logger.info("Spark Conf: " + sc.getConf.toDebugString)
 
-    //executeJob(oneClusterWriteReadSameTable)
+    executeJob(oneClusterWriteReadSameTable)
     //executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
     //executeJob(twoClustersCoordinatedWrite())
-    executeJob(sstableToParquet)
+    //executeJob(sstableToParquet)
   }
 
   def executeJob[T](r: => T)(implicit spark: SparkSession): Unit = {
