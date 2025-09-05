@@ -1,6 +1,6 @@
 package org.apache.cassandra.spark.analytics.example
 
-import com.instaclustr.cassandra.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
+//import com.instaclustr.cassandra.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 
@@ -28,58 +28,58 @@ object App extends SparkUtils {
     spark.close()
   }
 
-  /**
-   * 1. write data to spark_test.test table
-   * 2. transform all written data to Parquet files
-   */
-  private def sstableToParquet()(implicit spark: SparkSession, sc: SparkContext, sql: SQLContext): Unit = {
-    writeOneCluster(JobConfiguration(
-      // write
-      Map(
-        "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
-        "keyspace" -> "spark_test",
-        "table" -> "test",
-        "local_dc" -> "dc1",
-        "bulk_writer_cl" -> "ALL",
-        "rows" -> "10000000",
-        "data_transport" -> DIRECT.toString,
-      ),
-      // read
-      Map.empty))
-
-    implicit val transformationJobConfig: JobConfiguration = JobConfiguration(
-      Map.empty,
-      Map.empty
-    )
-
-    logger.info(execute[Long]((_, _, _) => {
-
-      val options = new PartitionResolverOptions
-      options.sidecar = "spark-master-1:9043"
-      options.dc = "dc1"
-      options.keyspace = "spark_test"
-      options.rf = 3
-
-      val partitions = new CassandraPartitionsResolver(options).getPartitions.toSeq
-
-      val builder = new TransformerOptions.Builder()
-        .keyspace("spark_test")
-        .table("test")
-        .maxRowsPerFile(100000)
-        .output("/submit/output")
-        .sidecar("spark-master-1:9043")
-        .sidecar("cassandra-node-1:9043")
-        .sidecar("cassandra-node-2:9043")
-
-      val files = sc.parallelize(partitions, 6).map(p => {
-        new SSTableTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
-      }).collect().flatten
-
-      files.foreach(println(_))
-
-      files.length
-    }, { -1 }).toString)
-  }
+//  /**
+//   * 1. write data to spark_test.test table
+//   * 2. transform all written data to Parquet files
+//   */
+//  private def sstableToParquet()(implicit spark: SparkSession, sc: SparkContext, sql: SQLContext): Unit = {
+//    writeOneCluster(JobConfiguration(
+//      // write
+//      Map(
+//        "sidecar_contact_points" -> "spark-master-1,cassandra-node-1,cassandra-node-2",
+//        "keyspace" -> "spark_test",
+//        "table" -> "test",
+//        "local_dc" -> "dc1",
+//        "bulk_writer_cl" -> "ALL",
+//        "rows" -> "10000000",
+//        "data_transport" -> DIRECT.toString,
+//      ),
+//      // read
+//      Map.empty))
+//
+//    implicit val transformationJobConfig: JobConfiguration = JobConfiguration(
+//      Map.empty,
+//      Map.empty
+//    )
+//
+//    logger.info(execute[Long]((_, _, _) => {
+//
+//      val options = new PartitionResolverOptions
+//      options.sidecar = "spark-master-1:9043"
+//      options.dc = "dc1"
+//      options.keyspace = "spark_test"
+//      options.rf = 3
+//
+//      val partitions = new CassandraPartitionsResolver(options).getPartitions.toSeq
+//
+//      val builder = new TransformerOptions.Builder()
+//        .keyspace("spark_test")
+//        .table("test")
+//        .maxRowsPerFile(100000)
+//        .output("/submit/output")
+//        .sidecar("spark-master-1:9043")
+//        .sidecar("cassandra-node-1:9043")
+//        .sidecar("cassandra-node-2:9043")
+//
+//      val files = sc.parallelize(partitions, 6).map(p => {
+//        new SSTableTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
+//      }).collect().flatten
+//
+//      files.foreach(println(_))
+//
+//      files.length
+//    }, { -1 }).toString)
+//  }
 
   /**
    * 1. write data to spark_test.test
