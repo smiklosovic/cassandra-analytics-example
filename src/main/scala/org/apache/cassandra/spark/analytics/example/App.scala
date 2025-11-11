@@ -20,8 +20,8 @@ object App extends SparkUtils {
     //executeJob(oneClusterWriteReadSameTable)
     //executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
-    //executeJob(twoClustersCoordinatedWrite())
-    executeJob(sstableToParquet)
+    executeJob(twoClustersCoordinatedWrite())
+    //executeJob(sstableToParquet)
   }
 
   def executeJob[T](r: => T)(implicit spark: SparkSession): Unit = {
