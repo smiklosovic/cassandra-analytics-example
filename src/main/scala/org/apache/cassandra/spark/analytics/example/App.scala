@@ -1,7 +1,6 @@
 package org.apache.cassandra.spark.analytics.example
 
-//import com.instaclustr.cassandra.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
-import com.instaclustr.cassandra.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
+import com.instaclustr.transformer.core.{CassandraPartitionsResolver, PartitionResolverOptions, SSTableTransformer, TransformerOptions}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql._
 
@@ -18,9 +17,9 @@ object App extends SparkUtils {
     logger.info("Spark Conf: " + sc.getConf.toDebugString)
 
     //executeJob(oneClusterWriteReadSameTable)
-    //executeJob(oneClusterCopyTable())
+    executeJob(oneClusterCopyTable())
     //executeJob(twoClustersCopyTable())
-    executeJob(twoClustersCoordinatedWrite())
+    //executeJob(twoClustersCoordinatedWrite())
     //executeJob(sstableToParquet)
   }
 
@@ -73,7 +72,7 @@ object App extends SparkUtils {
         .sidecar("cassandra-node-2:9043")
 
       val files = sc.parallelize(partitions, 6).map(p => {
-        new SSTableTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.getPath)
+        new SSTableTransformer(builder.partition(p).build()).runTransformation().asScala.toList.map(t => t.toString)
       }).collect().flatten
 
       files.foreach(println(_))
